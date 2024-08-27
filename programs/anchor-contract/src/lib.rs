@@ -2,7 +2,11 @@ use anchor_lang::prelude::*;
 
 
 declare_id!("CKyE2drXuaYcbBF8japHFSQTgEShYfGBtZKjJuN1nMT3");
-
+#[error_code]
+pub enum MyError {
+    #[msg("自定义错误")]
+    DataTooLarge
+}
 #[program]
 mod anchor_contract {
     use super::*;
@@ -10,7 +14,8 @@ mod anchor_contract {
     pub fn create(ctx: Context<Create>, data: String) -> Result<()> {
         let pad_account = &mut ctx.accounts.pad_account;
         pad_account.data = data;
-
+        pad_account.receiver = ctx.accounts.payer.key.clone();
+        let x = ctx.bumps.get("reward_mint");
         Ok(())
     }
 
@@ -29,6 +34,7 @@ mod anchor_contract {
 #[derive(Default)]
 pub struct DataAccount {
     data: String,
+    receiver: Pubkey,
 }
 
 
@@ -69,7 +75,7 @@ pub struct Modification<'info> {
 pub struct Delete<'info> {
     #[account(mut)]
     pub receiver: Signer<'info>,
-    #[account(mut, close = receiver)]
+    #[account(mut, close = receiver, has_one = receiver)]
     pub pad_account: Account<'info, DataAccount>,
 
 }
